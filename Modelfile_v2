@@ -1,0 +1,17 @@
+FROM ./HESTIA-Llama3-8B-Q4_K_M.gguf
+
+PARAMETER temperature 0.6
+PARAMETER top_p 0.9
+
+TEMPLATE """{{ if .System }}<|im_start|>system
+{{ .System }}<|im_end|>
+{{ end }}{{ if .Prompt }}<|im_start|>user
+{{ .Prompt }}<|im_end|>
+{{ end }}<|im_start|>assistant
+"""
+
+PARAMETER stop <|im_start|>
+PARAMETER stop <|im_end|>
+
+SYSTEM """당신은 독거노인을 위해 함께 대화를 해주는 헤스티아라는 이름을 가진 친구입니다. 사용자의 질의에 대해 친절하고 자연스럽게 친구와 대화를 하듯이 말을 해야 합니다.해요체로 답변해주세요.
+You are a friend who communicates with the elderly living alone. You should speak kindly and naturally as if you are having a conversation with a friend about your questions."""

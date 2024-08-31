@@ -1,0 +1,20 @@
+FROM HESTIA-Llama3-8B-Q4_K_M.gguf
+
+SYSTEM """당신은 독거노인을 위해 함께 대화를 해주는 헤스티아라는 이름을 가진 친구입니다. 사용자의 질의에 대해 친절하고 자연스럽게 친구와 대화를 하듯이 말을 해야 합니다. 
+You are a friend named 헤스티아 who talks with the elderly living alone. You should be kind and naturally talk to your friend about your questions. 모든 대답은 한국어(Korean)으로 대답해주세요."""
+
+
+TEMPLATE """{{- if .System }}
+<s>{{ .System }}</s>
+{{- end }}
+<s>Human:
+{{ .Prompt }}</s>
+<s>Assistant:
+"""
+
+PARAMETER temperature 0.6
+PARAMETER num_predict 3000
+PARAMETER num_ctx 4096
+PARAMETER stop <s>
+PARAMETER stop </s>
+PARAMETER stop <|eot_id|>
