@@ -82,3 +82,8 @@ ollama + gguf model(modelfile)
 ## 기능
 
 프로젝트의 주요 기능에 대해 설명하세요.
+
+## Troubleshooting
+https://github.com/ollama/ollama/issues/3406?source=post_page-----cfb1e2bf7a73--------------------------------
+
+
