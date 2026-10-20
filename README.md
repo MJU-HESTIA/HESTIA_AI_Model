@@ -1,89 +1,51 @@
-# AI_Model
+# HESTIA_AI_Model — Jetson Orin Nano용 Ollama 로컬 LLM 설정 (Llama3 8B Q4_K_M)
 
-ollama + gguf model(modelfile)
+HESTIA의 **로컬 대화 모델** 설정 저장소입니다. Llama3 8B 기반 GGUF(Q4_K_M 양자화) 모델을 Ollama에 등록하기 위한 Modelfile과, Jetson Orin Nano에서 Ollama를 CUDA로 빌드하는 절차를 담고 있습니다. HESTIA_SW의 `ollama_chat.py`가 이 모델을 호출합니다.
 
-## Ollama 설치 및 실행 방법
+> **English summary** — Ollama Modelfiles for a Llama3 8B Q4_K_M GGUF model (`HESTIA-Llama3-8B-Q4_K_M.gguf`, not included in the repo) with a Korean companion-persona system prompt, plus notes for building Ollama with CUDA on a Jetson Orin Nano. Used by `ollama_chat.py` in HESTIA_SW.
 
-//https://github.com/ollama/ollama/issues/3406 참고
+## 파일
 
-1. Curl을 설치합니다.
-    ```bash
-    sudo apt-get install curl
-    ```
+| 파일 | 내용 |
+|---|---|
+| `Modelfile` | `FROM HESTIA-Llama3-8B-Q4_K_M.gguf`, 독거노인 대화 친구 '헤스티아' 시스템 프롬프트(한국어 응답), `<s>Human/Assistant` 템플릿, temperature 0.6, num_ctx 4096, num_predict 3000 |
+| `Modelfile_v2` | 같은 GGUF, ChatML(`<|im_start|>`) 템플릿, temperature 0.6, top_p 0.9 |
+| `convert_hf_to_gguf.py` | llama.cpp의 HF → GGUF 변환 스크립트 사본 |
 
-2. Curl을 이용해 ollama를 설치합니다.
+GGUF 가중치 파일(`*.gguf`)은 용량 문제로 저장소에 포함하지 않습니다.
 
-    ```bash
-    curl -fsSL https://ollama.com/install.sh | sh
-    ```
+## 1. Jetson Orin Nano에서 Ollama 빌드 (CUDA)
 
-3. Set up the Cmake and Go.
-    ```bash
-    export GOLANG_VERSION=1.21.3
-    export GO_ARCH=arm64
-    export CMAKE_VERSION=3.22.1
-    export LD_LIBRARY_PATH=/usr/local/cuda/lib:/usr/local/cuda/lib64/:/usr/local/cuda/include
-    export OLLAMA_SKIP_CPU_GENERATE="1"
-    export CGO_ENABLED="1"
-    export CMAKE_CUDA_ARCHITECTURES="72;87"
+참고: https://github.com/ollama/ollama/issues/3406
 
-    # sudo apt update && sudo apt install -y build-essentials
+```bash
+sudo apt-get install curl
+curl -fsSL https://ollama.com/install.sh | sh
 
-    curl -s -L https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}-linux-$(uname -m).tar.gz | tar -zx -C /usr --strip-components 1
+export GOLANG_VERSION=1.21.3 GO_ARCH=arm64 CMAKE_VERSION=3.22.1
+export LD_LIBRARY_PATH=/usr/local/cuda/lib:/usr/local/cuda/lib64/:/usr/local/cuda/include
+export OLLAMA_SKIP_CPU_GENERATE="1" CGO_ENABLED="1" CMAKE_CUDA_ARCHITECTURES="72;87"
+curl -s -L https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}-linux-$(uname -m).tar.gz | sudo tar -zx -C /usr --strip-components 1
+curl -s -L https://dl.google.com/go/go${GOLANG_VERSION}.linux-${GO_ARCH}.tar.gz | sudo tar xz -C /usr/local
+sudo ln -s /usr/local/go/bin/go /usr/local/bin/go
 
-    # rm /usr/local/bin/cmake && update-alternatives --install /usr/local/bin/cmake cmake /usr/bin/cmake 30
+# Ollama 소스 빌드 후 바이너리 교체
+sudo cp ollama /usr/local/bin/ollama
+sudo systemctl restart ollama.service
+```
 
-    curl -s -L https://dl.google.com/go/go${GOLANG_VERSION}.linux-${GO_ARCH}.tar.gz | tar xz -C /usr/local
-    ln -s /usr/local/go/bin/go /usr/local/bin/go
-    ln -s /usr/local/go/bin/gofmt /usr/local/bin/gofmt
-    ```
+## 2. HESTIA 모델 등록 및 실행
 
-4. Clone, compile, and build. Elevated privileges were needed for the build.
-    ```bash
-    sudo rm /usr/local/bin/ollama 
-    sudo cp ollama /usr/local/bin/ollama
+```bash
+git clone https://github.com/MJU-HESTIA/HESTIA_AI_Model.git && cd HESTIA_AI_Model
+# HESTIA-Llama3-8B-Q4_K_M.gguf 를 이 폴더에 둔다
+ollama create koni -f Modelfile      # HESTIA_SW/ollama_chat.py 가 모델명 'koni'를 호출
+ollama run koni "안녕, 오늘 기분 어때?"
+```
 
-    sudo systemctl restart ollama.service
-    ```
+## 3. 참고 / 한계
+- Modelfile 템플릿이 Llama3 공식 채팅 템플릿(`<|start_header_id|>`)이 아니라 `<s>Human/Assistant`(v1), ChatML(v2) 형식입니다. 모델 출처에 맞는 템플릿인지 확인이 필요합니다.
+- GGUF 생성(변환·양자화) 과정과 원본 모델 출처는 이 저장소에 기록되어 있지 않습니다.
 
-5. Install example models and run
-    ```bash
-    ollama run gemma2
-    ```
-
-## HESTIA model 설치 및 실행 방법
-
-1. 레포지토리를 클론합니다.
-    ```
-    git clone https://github.com/MJU-HESTIA/HESTIA_AI_Model.git
-    ```
-
-2. 터미널에서 ollama를 설치합니다.
-
-    ```
-
-    ```
-
-3. 디렉토리로 이동합니다.
-    ```
-    cd repository
-    ```
-
-4. 필요한 패키지를 설치합니다.
-    ```
-    npm install
-    ```
-
-5. 프로젝트를 실행합니다.
-    ```
-    npm start
-    ```
-
-## 기능
-
-프로젝트의 주요 기능에 대해 설명하세요.
-
-## Troubleshooting
-https://github.com/ollama/ollama/issues/3406?source=post_page-----cfb1e2bf7a73--------------------------------
-
-
+## My role
+**이승석** — Modelfile(시스템 프롬프트·템플릿·파라미터) 작성, Jetson Orin Nano Ollama 빌드·배포, HESTIA_SW 로컬 LLM 연동(`ollama_chat.py`).
